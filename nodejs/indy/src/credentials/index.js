@@ -30,6 +30,10 @@ exports.sendOffer = async function (theirDid, credentialDefinitionId, credential
       await indy.store.pendingCredentialOffers.write(credOffer);
       let pairwise = await sdk.getPairwise(await indy.wallet.get(), theirDid);
       let myDid = pairwise.my_did;
+
+      console.log(`Danny: Credential Offer:`)
+      console.log(JSON.stringify(credOffer))
+
       let message = await indy.crypto.buildAuthcryptedMessage(myDid, theirDid, MESSAGE_TYPES.OFFER, credOffer);
       let meta = JSON.parse(pairwise.metadata);
       let theirEndpointDid = meta.theirEndpointDid;
@@ -44,6 +48,10 @@ exports.sendRequest = async function (theirDid, encryptedMessage) {
     let masterSecretId = await indy.did.getEndpointDidAttribute('master_secret_id');
     let [credRequestJson, credRequestMetadataJson] = await sdk.proverCreateCredentialReq(await indy.wallet.get(), myDid, credentialOffer, credentialDefinition, masterSecretId);
     indy.store.pendingCredentialRequests.write(credRequestJson, credRequestMetadataJson);
+
+    console.log(`Danny: Credential Request:`)
+    console.log(JSON.stringify(credRequestJson))
+
     let message = await indy.crypto.buildAuthcryptedMessage(myDid, theirDid, MESSAGE_TYPES.REQUEST, credRequestJson);
     let theirEndpointDid = await indy.did.getTheirEndpointDid(theirDid);
     return indy.crypto.sendAnonCryptedMessage(theirEndpointDid, message);
@@ -52,6 +60,7 @@ exports.sendRequest = async function (theirDid, encryptedMessage) {
 exports.acceptRequest = async function(theirDid, encryptedMessage) {
     let myDid = await indy.pairwise.getMyDid(theirDid);
     let credentialRequest = await indy.crypto.authDecrypt(myDid, encryptedMessage,);
+
     let [, credDef] = await indy.issuer.getCredDef(await indy.pool.get(), await indy.did.getEndpointDid(), credentialRequest.cred_def_id);
 
     let credentialOffer;
@@ -74,7 +83,11 @@ exports.acceptRequest = async function(theirDid, encryptedMessage) {
 
     console.log(credentialValues);
 
-    let [credential] = await sdk.issuerCreateCredential(await indy.wallet.get(), credentialOffer, credentialRequest, credentialValues);
+    let [credential] = await sdk.issuerCreateCredential(await indy.wallet.get(), credentialOffer, credentialRequest, credentialValues, null, -1);
+
+    console.log(`Danny: Credential Issuance:`)
+    console.log(JSON.stringify(credential))
+
     let message = await indy.crypto.buildAuthcryptedMessage(myDid, theirDid, MESSAGE_TYPES.CREDENTIAL, credential);
     let theirEndpointDid = await indy.did.getTheirEndpointDid(theirDid);
     await indy.crypto.sendAnonCryptedMessage(theirEndpointDid, message);
@@ -96,7 +109,9 @@ exports.acceptCredential = async function(theirDid, encryptedMessage) {
     let [, credentialDefinition] = await indy.issuer.getCredDef(await indy.pool.get(), await indy.did.getEndpointDid(), credential.cred_def_id);
     await sdk.proverStoreCredential(await indy.wallet.get(), null, credentialRequestMetadata, credential, credentialDefinition);
     let credentials = await indy.credentials.getAll();
-    console.log(credentials);
+
+    console.log(`Danny: All Credentials After Storage:`)
+    console.log(JSON.stringify(credentials));
 };
 
 exports.encode = function(string) {

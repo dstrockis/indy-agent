@@ -4,6 +4,8 @@ const indy = require('../../index.js');
 
 exports.createSchema = async function (name, version, attributes) {
     let [id, schema] = await sdk.issuerCreateSchema(await indy.did.getEndpointDid(), name, version, attributes);
+    console.log(`Danny: Credential Schema:`)
+    console.log(JSON.stringify(schema))
     let schemaRequest = await sdk.buildSchemaRequest(await indy.did.getEndpointDid(), schema);
     await sdk.signAndSubmitRequest(await indy.pool.get(), await indy.wallet.get(), await indy.did.getEndpointDid(), schemaRequest);
     await indy.did.pushEndpointDidAttribute('schemas', id);
@@ -22,6 +24,8 @@ exports.getSchemas = async function () {
 exports.createCredDef = async function (schemaId, tag) {
     let schema = await exports.getSchema(schemaId);
     let [credDefId, credDefJson] = await sdk.issuerCreateAndStoreCredentialDef(await indy.wallet.get(), await indy.did.getEndpointDid(), schema, tag, 'CL', '{"support_revocation": false}');
+    console.log(`Danny: Credential Definition:`)
+    console.log(JSON.stringify(credDefJson));
     let credDefRequest = await sdk.buildCredDefRequest(await indy.did.getEndpointDid(), credDefJson);
     await sdk.signAndSubmitRequest(await indy.pool.get(), await indy.wallet.get(), await indy.did.getEndpointDid(), credDefRequest);
     credDefJson.schemaId_long = schemaId;

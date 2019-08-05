@@ -50,6 +50,9 @@ exports.sendRequest = async function(myDid, theirDid, proofRequestText) {
     let proofRequest = JSON.parse(proofRequestText);
     proofRequest.nonce = randomNonce();
 
+    console.log(`Danny: Proof Request:`)
+    console.log(JSON.stringify(proofRequest))
+
     indy.store.pendingProofRequests.write(proofRequest);
 
     return indy.crypto.sendAnonCryptedMessage(await indy.did.getTheirEndpointDid(theirDid), await indy.crypto.buildAuthcryptedMessage(myDid, theirDid, MESSAGE_TYPES.REQUEST, proofRequest));
@@ -65,6 +68,10 @@ exports.prepareRequest = async function(message) {
     let pairwise = await indy.pairwise.get(message.origin);
     let proofRequest = await indy.crypto.authDecrypt(pairwise.my_did, message.message);
     let credsForProofRequest = await sdk.proverGetCredentialsForProofReq(await indy.wallet.get(), proofRequest);
+
+    console.log(`Danny: Credentials Available for Proof Request:`)
+    console.log(JSON.stringify(credsForProofRequest))
+
     let credsForProof = {};
     for(let attr of Object.keys(proofRequest.requested_attributes)) {
         credsForProof[`${credsForProofRequest['attrs'][attr][0]['cred_info']['referent']}`] = credsForProofRequest['attrs'][attr][0]['cred_info'];
@@ -83,7 +90,7 @@ exports.prepareRequest = async function(message) {
         }
     }
 
-    return {
+    let response = {
         origin: message.origin,
         type: message.type,
         message: {
@@ -92,6 +99,11 @@ exports.prepareRequest = async function(message) {
             requestedCreds: requestedCreds
         }
     }
+
+    console.log(`Danny: Prepared Proof Object:`)
+    console.log(JSON.stringify(response))
+
+    return response;
 };
 
 exports.acceptRequest = async function(messageId) {
@@ -99,8 +111,16 @@ exports.acceptRequest = async function(messageId) {
     indy.store.messages.deleteMessage(messageId);
     let pairwise = await indy.pairwise.get(message.message.origin);
     let [schemas, credDefs, revocStates] = await indy.pool.proverGetEntitiesFromLedger(message.message.message.credsForProof);
+
+    console.log(`Danny: Requested Credentials Input to Proof:`)
+    console.log(JSON.stringify(message.message.message.requestedCreds))
+
     let proof = await sdk.proverCreateProof(await indy.wallet.get(), message.message.message.proofRequest, message.message.message.requestedCreds, await indy.crypto.getMasterSecretId(), schemas, credDefs, revocStates);
     proof.nonce = message.message.message.proofRequest.nonce;
+
+    console.log(`Danny: Proof:`)
+    console.log(JSON.stringify(proof))
+
     let theirEndpointDid = await indy.did.getTheirEndpointDid(message.message.origin);
     await indy.crypto.sendAnonCryptedMessage(theirEndpointDid, await indy.crypto.buildAuthcryptedMessage(pairwise.my_did, message.message.origin, MESSAGE_TYPES.PROOF, proof));
 };
@@ -116,6 +136,10 @@ exports.validateAndStoreProof = async function(message) {
             indy.store.pendingProofRequests.delete(pr.id);
         }
     }
+
+    console.log(`Danny: Proof on Verifier Side:`)
+    console.log(JSON.stringify(proof))
+
     if(proofRequest) {
         let [schemas, credDefs, revRegDefs, revRegs] = await indy.pool.verifierGetEntitiesFromLedger(proof.identifiers);
         delete proof.nonce;

@@ -38,3 +38,18 @@ To open an agent instance, in a web browser navigate to:
 * `localhost:3003` for Faber University
 * `localhost:3004` for Acme Corporation
 * `localhost:3005` for Thrift Bank 
+
+### Example cred offer
+
+```json
+{"average":"3.8","degree":"Mech Eng","name":"Alice","year":"2013","status":"Available"}
+```
+
+### Example proof reqeust
+
+```json
+// replace cred_def_id with one output by logging
+
+{"name":"MyDef-Proof","version":"0.1","requested_attributes":{"attr_1_referent":{"name":"degree","restrictions":[{"cred_def_id":"EsgY7i4kD83HoeE2kNbp21:3:CL:203:MyDef"}]}},"requested_predicates":{}}
+```
+

@@ -14,7 +14,7 @@
     "express-session": "^1.16.1",
     "home-dir": "^1.0.0",
     "http-errors": "~1.6.2",
-    "indy-sdk": "^1.8.3",
+    "indy-sdk": "1.8.3",
     "json-stringify-pretty-compact": "^1.2.0",
     "morgan": "^1.9.1",
     "request": "^2.88.0",
